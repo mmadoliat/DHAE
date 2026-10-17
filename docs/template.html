@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DHAE · Hybrid and variational hybrid autoencoders for forecasting</title>
+<meta name="description" content="Code and papers on functional, hybrid and variational hybrid autoencoders with latent VAR forecasting (HAE and VHAE).">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Schibsted+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F5F8F8;--ink:#17302F;--muted:#566B6A;--rule:#D3DDDC;--func:#159A6A;--nonfunc:#D9501E;--latent:#1C9DB3;--band:rgba(33,182,207,.22);color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--paper:#0F1C1D;--ink:#E2ECEB;--muted:#97AAA9;--rule:#2B3D3E;--func:#3CC48E;--nonfunc:#FF7A45;--latent:#4FD0E6;--band:rgba(79,208,230,.22);color-scheme:dark}}
+*{box-sizing:border-box}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 1.125rem/1.62 "Newsreader",Georgia,"Times New Roman",serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration-color:var(--latent);text-decoration-thickness:.09em;text-underline-offset:.18em}
+a:hover{color:var(--latent)}
+a:focus-visible{outline:3px solid var(--latent);outline-offset:3px;border-radius:2px}
+h1,h2,h3,.ui{font-family:"Schibsted Grotesk",system-ui,sans-serif;letter-spacing:-.01em}
+.wrap{max-width:68ch;margin:0 auto;padding:0 1.25rem}
+header.top{display:flex;justify-content:space-between;align-items:baseline;max-width:1080px;margin:0 auto;padding:1.25rem}
+header.top .mark{font:700 1rem "Schibsted Grotesk",sans-serif}
+header.top nav a{margin-left:1.25rem;font:500 .95rem "Schibsted Grotesk",sans-serif;text-decoration:none}
+.hero{max-width:1080px;margin:0 auto;padding:2rem 1.25rem 1rem}
+.hero h1{font-size:clamp(2.1rem,5.2vw,3.6rem);line-height:1.04;font-weight:700;margin:0 0 1rem;max-width:18ch}
+.hero p.lede{font-size:1.3rem;max-width:52ch;margin:0 0 1.75rem;color:var(--muted)}
+figure.strip{margin:0}
+figure.strip svg{width:100%;height:auto;display:block;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.obs{fill:none;stroke:var(--ink);stroke-width:2.2;stroke-linejoin:round}
+.hae{fill:none;stroke:var(--nonfunc);stroke-width:1.8;stroke-dasharray:5 4}
+.band{fill:var(--band);stroke:none}
+.day{stroke:var(--rule);stroke-width:1;stroke-dasharray:3 4}
+.lab{font:500 12px "Schibsted Grotesk",sans-serif;fill:var(--muted)}
+figcaption{font-size:.95rem;color:var(--muted);margin-top:.6rem;max-width:80ch}
+.key{display:inline-flex;align-items:center;gap:.4rem;margin-right:1.1rem;white-space:nowrap}
+.key i{display:inline-block;width:1.6rem;height:.55rem}
+.k-obs{border-top:2.4px solid var(--ink)}.k-hae{border-top:2px dashed var(--nonfunc)}.k-band{background:var(--band)}
+main section{padding:2.6rem 0 .5rem}
+h2{font-size:1.75rem;line-height:1.15;margin:0 0 .8rem}
+h3{font-size:1.15rem;margin:1.6rem 0 .4rem}
+.pipe{margin:1.4rem 0;overflow-x:auto}
+.pipe svg{min-width:640px;width:100%;height:auto}
+.pipe text{font:500 13px "Schibsted Grotesk",sans-serif;fill:var(--ink)}
+.pipe .f{fill:none;stroke:var(--func);stroke-width:2}.pipe .n{fill:none;stroke:var(--nonfunc);stroke-width:2}
+.pipe .l{fill:none;stroke:var(--latent);stroke-width:2}.pipe .g{fill:none;stroke:var(--muted);stroke-width:1.5}
+.pipe .arrow{stroke:var(--muted);stroke-width:1.5;fill:none;marker-end:url(#ah)}
+.status{display:inline-block;font:500 .85rem "Schibsted Grotesk",sans-serif;padding:.1rem .55rem;border:1px solid var(--rule);border-radius:999px;margin-left:.5rem;vertical-align:.2em;color:var(--muted)}
+.tbl{overflow-x:auto;margin:1rem 0}
+table{border-collapse:collapse;width:100%;font:500 .95rem/1.4 "Schibsted Grotesk",sans-serif;font-variant-numeric:tabular-nums}
+th,td{padding:.45rem .6rem;text-align:right;border-bottom:1px solid var(--rule)}
+th[scope=row],thead th:first-child{text-align:left}
+thead th{font-weight:700;border-bottom:2px solid var(--ink)}
+.sd{color:var(--muted);font-weight:500}
+.note{border-left:3px solid var(--nonfunc);padding:.3rem 0 .3rem 1rem;margin:1.2rem 0;color:var(--ink)}
+pre{background:transparent;border:1px solid var(--rule);padding:.9rem 1rem;overflow-x:auto;font:400 .9rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border-radius:4px}
+footer{max-width:68ch;margin:3rem auto 0;padding:1.5rem 1.25rem 3rem;border-top:1px solid var(--rule);color:var(--muted);font-size:.95rem}
+@media (max-width:560px){header.top nav a{margin-left:.8rem}.hero p.lede{font-size:1.12rem}}
+@media (prefers-reduced-motion:no-preference){.obs{stroke-dasharray:3000;stroke-dashoffset:3000;animation:draw 2.2s ease-out .2s forwards}@keyframes draw{to{stroke-dashoffset:0}}}
+</style>
+</head>
+<body>
+<header class="top"><span class="mark">DHAE</span>
+<nav aria-label="Sections"><a href="#hae">HAE</a><a href="#vhae">VHAE</a><a href="#reproduce">Reproduce</a><a href="https://github.com/mmadoliat/DHAE">Code</a></nav></header>
+
+<div class="hero">
+<h1>Forecasting curves together with the measurements that come with them</h1>
+<p class="lede">Neural autoencoders learn a small latent state from a daily curve and its scalar companions; a vector autoregression moves that state forward; a smooth decoder turns it back into a forecast curve, and, in the variational version, into a forecast distribution.</p>
+<figure class="strip">{{HERO}}
+<figcaption><span class="key"><i class="k-obs"></i>Observed hourly traffic</span><span class="key"><i class="k-hae"></i>HAE + VAR forecast</span><span class="key"><i class="k-band"></i>VHAE 90% prediction band</span><br>
+Interstate 94 westbound, Minneapolis–St Paul, held-out week {{D0}}–{{D1}}. All seven days are forecast from the morning of the first; nothing in the week was used for training.</figcaption>
+</figure>
+</div>
+
+<main class="wrap">
+<section aria-labelledby="idea">
+<h2 id="idea">One pipeline, two papers</h2>
+<p>Each day <em>t</em> gives a curve sampled on a grid and, for hybrid data, a vector of scalar measurements such as weather. A fixed B-spline layer turns the curve into features; a shared encoder maps features and scalars to a latent state; a VAR forecasts the state; a shared decoder returns B-spline coefficients and the scalar part. Because the decoder works through a basis, every forecast is a smooth function.</p>
+<div class="pipe" role="img" aria-label="Pipeline: curve to basis features, combined with scalars, encoder, latent state, VAR, decoder, forecast curve and scalars">
+<svg viewBox="0 0 760 150"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" style="color:var(--muted)"/></marker></defs>
+<rect class="f" x="4" y="22" width="92" height="40" rx="6"/><text x="50" y="47" text-anchor="middle">curve x<tspan font-size="10" dy="3">t</tspan></text>
+<rect class="n" x="4" y="88" width="92" height="40" rx="6"/><text x="50" y="113" text-anchor="middle">scalars y<tspan font-size="10" dy="3">t</tspan></text>
+<rect class="f" x="128" y="22" width="102" height="40" rx="6"/><text x="179" y="47" text-anchor="middle">basis features</text>
+<rect class="g" x="262" y="22" width="86" height="106" rx="6"/><text x="305" y="80" text-anchor="middle">encoder</text>
+<rect class="l" x="380" y="52" width="92" height="46" rx="23"/><text x="426" y="80" text-anchor="middle">latent h<tspan font-size="10" dy="3">t</tspan></text>
+<rect class="l" x="380" y="4" width="92" height="30" rx="6"/><text x="426" y="24" text-anchor="middle">VAR(q)</text>
+<rect class="g" x="504" y="22" width="86" height="106" rx="6"/><text x="547" y="80" text-anchor="middle">decoder</text>
+<rect class="f" x="622" y="22" width="134" height="40" rx="6"/><text x="689" y="47" text-anchor="middle">smooth curve</text>
+<rect class="n" x="622" y="88" width="134" height="40" rx="6"/><text x="689" y="113" text-anchor="middle">scalars</text>
+<path class="arrow" d="M96,42 H126"/><path class="arrow" d="M230,42 H260"/><path class="arrow" d="M96,108 H260"/>
+<path class="arrow" d="M348,75 H378"/><path class="arrow" d="M472,75 H502"/><path class="arrow" d="M426,52 V36"/>
+<path class="arrow" d="M590,42 H620"/><path class="arrow" d="M590,108 H620"/></svg></div>
+<p>The two papers differ in one place, the latent state. In <strong>HAE</strong> it is a point; in <strong>VHAE</strong> the encoder returns a Gaussian distribution for it, so forecasts carry uncertainty about where the latent state is as well as about where it goes next.</p>
+</section>
+
+<section id="hae" aria-labelledby="hae-h">
+<h2 id="hae-h">HAE: hybrid autoencoders with shared temporal latent dynamics<span class="status">near submission</span></h2>
+<p>Pourmoshir, Haghbin and Maadooliat. The functional autoencoder (FAE) replaces FPCA scores by nonlinear latent coordinates; the hybrid autoencoder (HAE) gives the curve and the scalar measurements one shared latent state, one VAR and one decoder. The linear benchmark is hybrid PCA (HPCA), which is HAE with identity activations.</p>
+<p>On the Metro Interstate Traffic Volume data (1,214 complete days, 24 hourly values and 49 weather, holiday and calendar variables per day) HAE + VAR reduces the 7-day forecast MSE relative to HPCA + VAR by {{HAE_F}}% for the traffic curves and {{HAE_N}}% for the scalar measurements in our rerun of the paper's configuration.</p>
+<p class="note">A reproducibility audit of the HAE results is in <a href="https://github.com/mmadoliat/DHAE/blob/main/REPRODUCIBILITY_AUDIT.md">REPRODUCIBILITY_AUDIT.md</a>. The Metro comparison with HPCA reproduces; the simulation tables currently do not reproduce from the repository code.</p>
+</section>
+
+<section id="vhae" aria-labelledby="vhae-h">
+<h2 id="vhae-h">VHAE: variational hybrid autoencoders for probabilistic forecasting<span class="status">draft</span></h2>
+<p>The encoder of the HAE is replaced by a Gaussian posterior trained with a β-weighted evidence lower bound; the VAR is fitted to the posterior means. A forecast draw starts from a posterior draw of the latest latent states, adds VAR innovations, decodes, and adds observation noise estimated from reconstruction residuals. HAE and HPCA get the same treatment without the posterior draws, so the comparison isolates the representation.</p>
+<h3>Metro traffic, 7-day horizon (mean over {{NSEED}} seeds, SD in parentheses)</h3>
+<div class="tbl"><table>
+<thead><tr><th>Method</th><th>MSE curve</th><th>MSE scalars</th><th>90% coverage, curve</th><th>Interval score</th><th>CRPS</th></tr></thead>
+<tbody>{{VROWS}}</tbody></table></div>
+<p>Errors are on the standardized log scale of the curves and the standardized scale of the 49 scalars. Coverage close to 0.90 and smaller interval score and CRPS are better.</p>
+<h3>U.S. fertility, 2019–2023 (functional only, mean over seeds)</h3>
+<div class="tbl"><table>
+<thead><tr><th>Method</th><th>Forecast relMSE</th><th>90% coverage</th><th>CRPS</th></tr></thead>
+<tbody>{{FROWS}}</tbody></table></div>
+</section>
+
+<section id="reproduce" aria-labelledby="rep-h">
+<h2 id="rep-h">Reproduce</h2>
+<pre>git clone https://github.com/mmadoliat/DHAE.git && cd DHAE
+conda env create -f environment.yml && conda activate py39
+python HAE/run_metro.py          # HAE paper, Metro table and figure
+python HAE/run_fertility.py      # HAE paper, fertility application
+python VHAE/run_metro.py         # VHAE paper, Metro table and figure
+python VHAE/run_fertility.py     # VHAE paper, fertility table and figure
+python docs/build_site.py        # rebuild this page from the result files</pre>
+<p>Each script writes its numbers and the software versions to a results folder. <a href="https://github.com/mmadoliat/DHAE/blob/main/HAE/README.md">HAE/README</a> and <a href="https://github.com/mmadoliat/DHAE/blob/main/VHAE/README.md">VHAE/README</a> map every table and figure to the script that produces it.</p>
+</section>
+</main>
+<footer>Mobina Pourmoshir and Mehdi Maadooliat (Marquette University) and Hossein Haghbin (Persian Gulf University). Traffic data: John Hogue, UCI Machine Learning Repository, CC BY 4.0. Page generated by <code>docs/build_site.py</code>.</footer>
+</body>
+</html>

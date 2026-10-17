@@ -1,0 +1,16 @@
+name: py39
+channels: [pytorch, conda-forge]
+dependencies:
+  - python=3.9
+  - pytorch>=2.0
+  - cpuonly
+  - numpy
+  - scipy
+  - pandas
+  - scikit-learn
+  - statsmodels
+  - matplotlib
+  - openpyxl
+  - pip
+  - pip:
+      - -e .

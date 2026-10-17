@@ -1,0 +1,9 @@
+# Tested with Python 3.9 (conda env py39, Windows) and Python 3.12 / torch 2.3.1 (Linux, CPU).
+torch>=2.0
+numpy>=1.23
+scipy>=1.9
+pandas>=1.5
+scikit-learn>=1.1
+statsmodels>=0.13
+matplotlib>=3.6
+openpyxl>=3.0      # only for reading the archived .xlsx files

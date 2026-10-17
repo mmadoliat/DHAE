@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hybridae"
+version = "0.1.0"
+description = "Functional, hybrid and variational hybrid autoencoders with latent VAR forecasting (HAE / VHAE papers)"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{name = "Mobina Pourmoshir"}, {name = "Hossein Haghbin"}, {name = "Mehdi Maadooliat"}]
+dependencies = ["torch>=2.0", "numpy", "scipy", "pandas", "scikit-learn", "statsmodels", "matplotlib"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

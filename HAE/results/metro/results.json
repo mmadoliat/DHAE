@@ -1,0 +1,68 @@
+{
+  "HAE": {
+    "recon_func": 0.06499823927879333,
+    "recon_nonfunc": 0.07328546047210693,
+    "recon_hybrid": 0.13828369975090027,
+    "fore_func": 0.29476824402809143,
+    "fore_nonfunc": 0.33923983573913574,
+    "fore_hybrid": 0.6340080797672272,
+    "fore_func_counts": 418802.07579641556,
+    "recon_weather": 0.0871264711022377,
+    "fore_weather": 0.4537632465362549,
+    "var": {
+      "model": "VAR",
+      "lag": 14,
+      "aic": -1.8044245292483359
+    },
+    "best_epoch": 665
+  },
+  "HPCA": {
+    "recon_func": 0.191957488656044,
+    "recon_nonfunc": 0.6084830164909363,
+    "recon_hybrid": 0.8004405051469803,
+    "fore_func": 0.4478707221310738,
+    "fore_nonfunc": 0.4086195896002852,
+    "fore_hybrid": 0.856490311731359,
+    "fore_func_counts": 558122.7393179432,
+    "recon_weather": 0.4625483453273773,
+    "fore_weather": 0.4704466691757453,
+    "var": {
+      "model": "VAR",
+      "lag": 12,
+      "aic": -4.1084898035620325
+    },
+    "explained_var": 0.48622918128967285
+  },
+  "FAE": {
+    "recon_func": 0.04960840940475464,
+    "fore_func": 0.23602797091007233,
+    "fore_func_counts": 279687.47583824396,
+    "var": {
+      "model": "VAR",
+      "lag": 8,
+      "aic": -2.0470476991021718
+    }
+  },
+  "FPCA": {
+    "recon_func": 0.06017588824033737,
+    "fore_func": 0.21413396846625798,
+    "fore_func_counts": 323829.2426357196,
+    "var": {
+      "model": "VAR",
+      "lag": 13,
+      "aic": -2.2972031555572143
+    }
+  },
+  "seed": 776,
+  "runtime_sec": 424.3291344642639,
+  "env": {
+    "python": "3.12.3",
+    "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+    "torch": "2.3.1+cu121",
+    "numpy": "2.4.4",
+    "scipy": "1.17.1",
+    "sklearn": "1.8.0",
+    "statsmodels": "0.15.0",
+    "pandas": "3.0.2"
+  }
+}

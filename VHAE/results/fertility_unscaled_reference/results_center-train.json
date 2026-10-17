@@ -1,0 +1,50 @@
+{
+  "center": "train",
+  "env": {
+    "python": "3.12.3",
+    "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+    "torch": "2.3.1+cu121",
+    "numpy": "2.4.4",
+    "scipy": "1.17.1",
+    "sklearn": "1.8.0",
+    "statsmodels": "0.15.0",
+    "pandas": "3.0.2"
+  },
+  "FPCA": {
+    "K5": {
+      "fore_relMSE": 0.03393738599910127,
+      "fore_relRMSE": 0.1842210248562885,
+      "recon_relMSE": 5.317329834032493e-14,
+      "aic_lag": 8
+    },
+    "K3": {
+      "fore_relMSE": 0.03719579161774543,
+      "fore_relRMSE": 0.192862105188514,
+      "recon_relMSE": 8.41624661770812e-05,
+      "aic_lag": 6
+    }
+  },
+  "FAE": [
+    {
+      "seed": 743,
+      "fore_relMSE": 0.010060711948488624,
+      "fore_relRMSE": 0.10030310039320132,
+      "recon_relMSE": 0.006570928395867031,
+      "aic_lag": 6
+    },
+    {
+      "seed": 744,
+      "fore_relMSE": 0.009467805090836182,
+      "fore_relRMSE": 0.09730264688504718,
+      "recon_relMSE": 0.0062404484373439675,
+      "aic_lag": 8
+    },
+    {
+      "seed": 745,
+      "fore_relMSE": 0.012302787346945569,
+      "fore_relRMSE": 0.11091793068276007,
+      "recon_relMSE": 0.007724117845768761,
+      "aic_lag": 8
+    }
+  ]
+}
