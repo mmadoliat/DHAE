@@ -17,7 +17,7 @@ diagnostics of §3.4 below.
 | Paper item | Reproduced? | Main reason |
 |---|---|---|
 | Sec. 3, Tables 2–3, Fig. 3 (simulation) | **No — conclusion reversed** | with the committed generator and the stated settings FPCA beats FAE on the nonlinear benchmark by 1–2 orders of magnitude (§1) |
-| Sec. 4.1, relMSE 0.33 (FPCA) vs 0.13 (FAE), Fig. 5 | **No** | no pre-processing variant gives these values; with the stated settings FAE ≈ FPCA (K = 3) and FAE < FPCA (K = 5) (§2) |
+| Sec. 4.1, relMSE 0.33 (FPCA) vs 0.13 (FAE), Fig. 5 | **No** | no pre-processing variant gives these values; with the stated settings FAE's forecast relMSE is slightly below FPCA's at K = 3 (0.063 vs 0.072) and about 2.5 times FPCA's at K = 5 (0.063 vs 0.025) (§2) |
 | Sec. 4.1, "AIC yielded q = 1", "basis selected by GCV" (25) | **No** | AIC selects 8 (BIC 2–3); GCV selects 16 (§2) |
 | Table 5, HPCA columns; weather-only HPCA contributions 0.2738 / 0.2784 | **Yes, exactly** | deterministic |
 | Table 5, HAE columns | approximately | seed/platform dependent; 10-seed means in §3.2 |
