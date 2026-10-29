@@ -1,68 +1,69 @@
 {
   "HAE": {
-    "recon_func": 0.06499823927879333,
-    "recon_nonfunc": 0.07328546047210693,
-    "recon_hybrid": 0.13828369975090027,
-    "fore_func": 0.29476824402809143,
-    "fore_nonfunc": 0.33923983573913574,
-    "fore_hybrid": 0.6340080797672272,
-    "fore_func_counts": 418802.07579641556,
-    "recon_weather": 0.0871264711022377,
-    "fore_weather": 0.4537632465362549,
+    "recon_func": 0.08896208554506302,
+    "recon_nonfunc": 0.11077005416154861,
+    "recon_hybrid": 0.19973213970661163,
+    "fore_func": 0.2327301800251007,
+    "fore_nonfunc": 0.36567196249961853,
+    "fore_hybrid": 0.5984021425247192,
+    "fore_func_counts": 277933.450796936,
+    "recon_weather": 0.11934039741754532,
+    "fore_weather": 0.47197720408439636,
+    "contrib_weather_recon": 0.07063002677570138,
+    "contrib_weather_fore": 0.2793334684338914,
+    "contrib_weather_continuous_recon": 0.04558513537326037,
+    "contrib_weather_continuous_fore": 0.13734350528076716,
+    "contrib_weather_indicator_recon": 0.025044891402440983,
+    "contrib_weather_indicator_fore": 0.1419899631531243,
+    "contrib_calendar_recon": 0.03529701670818336,
+    "contrib_calendar_fore": 0.08354626095495064,
+    "contrib_holiday_recon": 0.004843023225242665,
+    "contrib_holiday_fore": 0.002792222640572089,
     "var": {
       "model": "VAR",
-      "lag": 14,
-      "aic": -1.8044245292483359
+      "lag": 7,
+      "aic": -2.024479699304682
     },
-    "best_epoch": 665
+    "best_epoch": 209
   },
   "HPCA": {
-    "recon_func": 0.191957488656044,
+    "recon_func": 0.1919575035572052,
     "recon_nonfunc": 0.6084830164909363,
-    "recon_hybrid": 0.8004405051469803,
-    "fore_func": 0.4478707221310738,
-    "fore_nonfunc": 0.4086195896002852,
-    "fore_hybrid": 0.856490311731359,
-    "fore_func_counts": 558122.7393179432,
-    "recon_weather": 0.4625483453273773,
-    "fore_weather": 0.4704466691757453,
+    "recon_hybrid": 0.8004405200481415,
+    "fore_func": 0.4478705624515365,
+    "fore_nonfunc": 0.40861965663843225,
+    "fore_hybrid": 0.8564902190899688,
+    "fore_func_counts": 558122.5515859845,
+    "recon_weather": 0.4625483751296997,
+    "fore_weather": 0.4704465776650364,
+    "contrib_weather_recon": 0.2737531127858075,
+    "contrib_weather_fore": 0.2784275663731848,
+    "contrib_weather_continuous_recon": 0.11469056146341257,
+    "contrib_weather_continuous_fore": 0.11407908308404309,
+    "contrib_weather_indicator_recon": 0.1590625513223949,
+    "contrib_weather_indicator_fore": 0.16434848328914167,
+    "contrib_calendar_recon": 0.1131014836402055,
+    "contrib_calendar_fore": 0.12814270059014404,
+    "contrib_holiday_recon": 0.22162844810285662,
+    "contrib_holiday_fore": 0.002049389675103391,
     "var": {
       "model": "VAR",
       "lag": 12,
-      "aic": -4.1084898035620325
+      "aic": -4.108490468630147
     },
-    "explained_var": 0.48622918128967285
-  },
-  "FAE": {
-    "recon_func": 0.04960840940475464,
-    "fore_func": 0.23602797091007233,
-    "fore_func_counts": 279687.47583824396,
-    "var": {
-      "model": "VAR",
-      "lag": 8,
-      "aic": -2.0470476991021718
-    }
-  },
-  "FPCA": {
-    "recon_func": 0.06017588824033737,
-    "fore_func": 0.21413396846625798,
-    "fore_func_counts": 323829.2426357196,
-    "var": {
-      "model": "VAR",
-      "lag": 13,
-      "aic": -2.2972031555572143
-    }
+    "explained_var": 0.4862291216850281
   },
   "seed": 776,
-  "runtime_sec": 424.3291344642639,
+  "optimizer": "adamw",
+  "runtime_sec": 284.8945276737213,
   "env": {
-    "python": "3.12.3",
-    "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
-    "torch": "2.3.1+cu121",
-    "numpy": "2.4.4",
-    "scipy": "1.17.1",
-    "sklearn": "1.8.0",
-    "statsmodels": "0.15.0",
-    "pandas": "3.0.2"
+    "python": "3.9.21",
+    "platform": "Linux-5.14.0-687.59.1.el9_8.x86_64-x86_64-with-glibc2.34",
+    "torch": "2.8.0+cpu",
+    "numpy": "2.0.2",
+    "scipy": "1.13.1",
+    "sklearn": "1.6.1",
+    "statsmodels": "0.14.6",
+    "pandas": "2.3.3"
   }
 }

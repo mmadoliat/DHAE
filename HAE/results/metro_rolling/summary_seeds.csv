@@ -1,0 +1,19 @@
+,,mean,mean,mean,median,median,median
+,,mean,min,max,mean,min,max
+method,metric,,,,,,
+HAE,contrib_calendar,0.2702,0.2561,0.3013,0.0917,0.0821,0.1101
+HAE,contrib_weather,7.5987,7.5356,7.6486,0.3059,0.2741,0.3265
+HAE,func,0.3271,0.2813,0.3723,0.2487,0.19,0.3052
+HAE,nonfunc,7.8688,7.8369,7.9139,0.4105,0.3805,0.4444
+HAE<HPCA origins,contrib_calendar,6.2,4.0,8.0,6.2,4.0,8.0
+HAE<HPCA origins,contrib_weather,3.2,1.0,5.0,3.2,1.0,5.0
+HAE<HPCA origins,func,3.6,2.0,5.0,3.6,2.0,5.0
+HAE<HPCA origins,nonfunc,5.0,3.0,7.0,5.0,3.0,7.0
+HPCA,contrib_calendar,0.2632,0.2632,0.2632,0.1015,0.1015,0.1015
+HPCA,contrib_weather,7.5982,7.5982,7.5982,0.2423,0.2423,0.2423
+HPCA,func,0.2827,0.2827,0.2827,0.2004,0.2004,0.2004
+HPCA,nonfunc,7.8614,7.8614,7.8614,0.4012,0.4012,0.4012
+Seasonal naive,contrib_calendar,0.3376,0.3376,0.3376,0.028,0.028,0.028
+Seasonal naive,contrib_weather,11.2564,11.2564,11.2564,0.505,0.505,0.505
+Seasonal naive,func,0.2603,0.2603,0.2603,0.194,0.194,0.194
+Seasonal naive,nonfunc,11.5939,11.5939,11.5939,0.709,0.709,0.709

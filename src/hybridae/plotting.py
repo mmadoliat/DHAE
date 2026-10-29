@@ -60,3 +60,59 @@ def plot_curve_forecasts(grid, truth, preds: dict, labels, out_pdf, xlabel, ylab
     fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", ncol=4, frameon=False, fontsize=8,
                bbox_to_anchor=(0.5, 1.07))
     fig.tight_layout(w_pad=0.3); fig.savefig(out_pdf, bbox_inches="tight"); plt.close(fig)
+
+
+# ------------------------------------------------------------------ paper style
+# Colours/line styles of the figures in the HAE manuscript (Figs. fertility_forecasts, hae_vs_hpca).
+PAPER = {"truth": dict(color="#0B4A8B", lw=1.8, marker="o", ms=2.2, label="Observed"),
+         "HPCA": dict(color="#E0A030", lw=1.8, ls="--", label="HPCA forecast"),
+         "FPCA": dict(color="#E0A030", lw=1.8, ls="--", label="FPCA forecast"),
+         "HAE": dict(color="#C8586C", lw=1.8, ls="-.", label="HAE forecast"),
+         "FAE": dict(color="#C8586C", lw=1.8, ls="-.", label="FAE forecast")}
+
+
+def _paper_grid(n, ncol=3, panel=(3.4, 2.15)):
+    nrow = int(np.ceil(n / ncol))
+    fig = plt.figure(figsize=(panel[0] * ncol, panel[1] * nrow))
+    gs = fig.add_gridspec(nrow, 2 * ncol)
+    axes = []
+    for i in range(n):
+        r, c = divmod(i, ncol)
+        last = (r == nrow - 1) and (n % ncol == 1) and n > 1   # centre a single last panel
+        sl = slice(ncol - 1, ncol + 1) if last else slice(2 * c, 2 * c + 2)
+        axes.append(fig.add_subplot(gs[r, sl]))
+    return fig, axes, nrow
+
+
+def plot_paper_panels(grid, truth, preds: dict, titles, out_pdf, xlabel, ylabel, xticks=None, ncol=3, smooth=True):
+    """Per-horizon panels in the manuscript layout: 3 columns, shared y-limits, legend in the
+    first free cell (or under the panels). smooth=True draws the forecast lines through a
+    200-point cubic interpolant of the grid values, as in the manuscript figures (observed
+    values are drawn as a polyline with markers)."""
+    from scipy.interpolate import CubicSpline
+    gf = np.linspace(grid[0], grid[-1], 200)
+    disp = (lambda v: (gf, CubicSpline(grid, v)(gf))) if smooth else (lambda v: (grid, v))
+    L = truth.shape[0]
+    fig, axes, nrow = _paper_grid(L, ncol)
+    lo = min(truth.min(), *[p.min() for p in preds.values()]); hi = max(truth.max(), *[p.max() for p in preds.values()])
+    pad = 0.05 * (hi - lo)
+    for i, ax in enumerate(axes):
+        ax.plot(grid, truth[i], **PAPER["truth"])
+        for m, p in preds.items():
+            ax.plot(*disp(p[i]), **PAPER[m])
+        ax.set_title(str(titles[i]), fontsize=10); ax.set_ylim(lo - pad, hi + pad)
+        ax.set_xlim(grid[0], grid[-1])
+        if xticks is not None:
+            ax.set_xticks(xticks)
+        ax.tick_params(labelsize=8.5)
+        if i % ncol == 0 or (i == L - 1 and L % ncol == 1):
+            ax.set_ylabel(ylabel, fontsize=10)
+        else:
+            ax.set_yticklabels([])
+    handles, labels = axes[0].get_legend_handles_labels()
+    if L % ncol:
+        fig.legend(handles, labels, loc="center", bbox_to_anchor=(0.80, 0.5 / nrow), frameon=True, fontsize=9)
+    else:
+        fig.legend(handles, labels, loc="lower center", ncol=len(labels), frameon=False, fontsize=9)
+    fig.supxlabel(xlabel, fontsize=10)
+    fig.tight_layout(); fig.savefig(out_pdf, bbox_inches="tight"); plt.close(fig)

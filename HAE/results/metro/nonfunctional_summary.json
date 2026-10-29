@@ -1,0 +1,211 @@
+{
+  "blocks": {
+    "weather_continuous": {
+      "recon_HPCA": 0.11469056146341257,
+      "recon_HAE": 0.04558513537326037,
+      "fore_HPCA": 0.11407908308404309,
+      "fore_HAE": 0.13734350528076716,
+      "n": 18,
+      "n_constant": 4
+    },
+    "weather_indicator": {
+      "recon_HPCA": 0.1590625513223949,
+      "recon_HAE": 0.025044891402440983,
+      "fore_HPCA": 0.16434848328914167,
+      "fore_HAE": 0.1419899631531243,
+      "n": 11,
+      "n_constant": 2
+    },
+    "calendar": {
+      "recon_HPCA": 0.1131014836402055,
+      "recon_HAE": 0.03529701670818336,
+      "fore_HPCA": 0.12814270059014404,
+      "fore_HAE": 0.08354626095495064,
+      "n": 9,
+      "n_constant": 0
+    },
+    "holiday": {
+      "recon_HPCA": 0.22162844810285662,
+      "recon_HAE": 0.004843023225242665,
+      "fore_HPCA": 0.002049389675103391,
+      "fore_HAE": 0.002792222640572089,
+      "n": 11,
+      "n_constant": 0
+    },
+    "weather": {
+      "recon_HPCA": 0.2737531127858075,
+      "recon_HAE": 0.07063002677570138,
+      "fore_HPCA": 0.2784275663731848,
+      "fore_HAE": 0.2793334684338914,
+      "n": 29,
+      "n_constant": 6
+    }
+  },
+  "total": {
+    "recon_HPCA": 0.6084830445288695,
+    "recon_HAE": 0.11077006670912737,
+    "fore_HPCA": 0.4086196566384322,
+    "fore_HAE": 0.3656719520294142
+  },
+  "categorical": {
+    "HPCA": {
+      "weather_condition_accuracy": 0.7630488815244407,
+      "rain_occurrence": {
+        "balanced_accuracy": 0.506578947368421,
+        "sensitivity": 0.013157894736842105,
+        "specificity": 1.0,
+        "n_pos": 228
+      },
+      "weekend": {
+        "balanced_accuracy": 0.9851175272505324,
+        "sensitivity": 0.9971671388101983,
+        "specificity": 0.9730679156908665,
+        "n_pos": 353
+      },
+      "holiday": {
+        "balanced_accuracy": 0.4995730145175064,
+        "sensitivity": 0.0,
+        "specificity": 0.9991460290350128,
+        "n_pos": 36
+      },
+      "named_holiday_accuracy": 0.5833333333333334
+    },
+    "HAE": {
+      "weather_condition_accuracy": 0.9867439933719967,
+      "rain_occurrence": {
+        "balanced_accuracy": 0.7625262082683727,
+        "sensitivity": 0.5526315789473685,
+        "specificity": 0.9724208375893769,
+        "n_pos": 228
+      },
+      "weekend": {
+        "balanced_accuracy": 0.9979980893114223,
+        "sensitivity": 0.9971671388101983,
+        "specificity": 0.9988290398126464,
+        "n_pos": 353
+      },
+      "holiday": {
+        "balanced_accuracy": 1.0,
+        "sensitivity": 1.0,
+        "specificity": 1.0,
+        "n_pos": 36
+      },
+      "named_holiday_accuracy": 1.0
+    },
+    "weather_condition_majority_share": 0.4208782104391052,
+    "n_days": 1207,
+    "n_holiday_days": 36
+  },
+  "constant_variables": [
+    "snow_1h_mean",
+    "snow_1h_min",
+    "snow_1h_max",
+    "snow_1h_std",
+    "snow_any",
+    "weather_Thunderstorm"
+  ],
+  "n_seeds": 10,
+  "HAE_over_seeds": {
+    "blocks": {
+      "weather_continuous_recon": {
+        "mean": 0.04225918755633569,
+        "sd": 0.004601142815147065
+      },
+      "weather_continuous_fore": {
+        "mean": 0.12447749964569754,
+        "sd": 0.020996961203741223
+      },
+      "weather_indicator_recon": {
+        "mean": 0.016999866930105315,
+        "sd": 0.005595494326084894
+      },
+      "weather_indicator_fore": {
+        "mean": 0.1780222562996362,
+        "sd": 0.046648926363551606
+      },
+      "calendar_recon": {
+        "mean": 0.026413806124848595,
+        "sd": 0.0056663211337729495
+      },
+      "calendar_fore": {
+        "mean": 0.10008572040457811,
+        "sd": 0.021755072207593346
+      },
+      "holiday_recon": {
+        "mean": 0.0047346799576058266,
+        "sd": 0.0014016513585986211
+      },
+      "holiday_fore": {
+        "mean": 0.003657746005621837,
+        "sd": 0.0020460633774522907
+      },
+      "weather_recon": {
+        "mean": 0.05925905448644102,
+        "sd": 0.009772551425498375
+      },
+      "weather_fore": {
+        "mean": 0.3024997559453337,
+        "sd": 0.05534392618353286
+      },
+      "total_recon": {
+        "mean": 0.09040754056889543,
+        "sd": 0.01606389054095531
+      },
+      "total_fore": {
+        "mean": 0.4062432223555336,
+        "sd": 0.041219493586598634
+      }
+    },
+    "categorical": {
+      "weather_condition_accuracy": {
+        "mean": 0.9922120961060481,
+        "sd": 0.004191917362277893,
+        "min": 0.9842584921292461
+      },
+      "rain_occurrence": {
+        "mean": 0.8715658208340052,
+        "sd": 0.06731466043557664,
+        "min": 0.7625262082683727
+      },
+      "holiday": {
+        "mean": 0.9986111111111111,
+        "sd": 0.0043920523057893995,
+        "min": 0.9861111111111112
+      },
+      "weekend": {
+        "mean": 0.9981397323709125,
+        "sd": 0.0009920652214918631,
+        "min": 0.9965816587165215
+      },
+      "named_holiday_accuracy": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "min": 1.0
+      }
+    },
+    "median_R2": {
+      "weather_continuous": 0.9131324664475393,
+      "weather_indicator": 0.9490396439293689,
+      "calendar": 0.8879289809204196,
+      "holiday": 0.9828305841192959
+    }
+  },
+  "median_R2": {
+    "weather_continuous": {
+      "HPCA": 0.6825424372674833,
+      "HAE": 0.9017749497154935
+    },
+    "weather_indicator": {
+      "HPCA": 0.05348338317496959,
+      "HAE": 0.9208361681250977
+    },
+    "calendar": {
+      "HPCA": 0.3382215105259766,
+      "HAE": 0.8608718536518716
+    },
+    "holiday": {
+      "HPCA": 0.011043352082836466,
+      "HAE": 0.9794783007319858
+    }
+  }
+}

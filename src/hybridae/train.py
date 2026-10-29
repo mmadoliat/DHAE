@@ -178,10 +178,17 @@ class MetroCfg:
     shuffle_batches: bool = False
     max_ar_lags: int = 21
     seed: int = 776
+    optimizer: str = "adamw"   # notebook (produced the paper's numbers); "adam" = Adam with L2 weight decay
     # VHAE only
     beta: float = 1e-3
     kl_warmup: int = 100
     logvar_init: float = -4.0
+
+
+def _metro_optimizer(model, cfg: MetroCfg):
+    if cfg.optimizer.lower() == "adam":
+        return optim.Adam(model.parameters(), lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
+    return optim.AdamW(model.parameters(), lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
 
 
 def build_hybrid(cfg: MetroCfg, n_grid, p, s, variational=False, n_meta=0):
@@ -233,7 +240,7 @@ def train_hybrid(cfg: MetroCfg, x_full, y_full, s, variational=False, m_full=Non
     model = build_hybrid(cfg, x_full.shape[1], y_full.shape[1], s, variational, m_full.shape[1] if has_m else 0)
     ds = TensorDataset(xtr, ytr, mtr) if has_m else TensorDataset(xtr, ytr)
     loader = DataLoader(ds, batch_size=cfg.batch_size, shuffle=cfg.shuffle_batches, drop_last=False)
-    opt = optim.AdamW(model.parameters(), lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
+    opt = _metro_optimizer(model, cfg)
     hist, best, best_state, best_ep, bad = [], np.inf, None, None, 0
     for ep in range(1, _epochs(cfg.epochs) + 1):
         model.train()
@@ -286,7 +293,7 @@ def train_metro_fae(cfg: MetroCfg, x_full, s, verbose=True):
     model = MetroFAE(x_full.shape[1], cfg.latent_dim, cfg.functional_feature_dim, cfg.hidden_width,
                      cfg.n_basis, bspline_basis_scipy(s, cfg.n_basis))
     loader = DataLoader(TensorDataset(xtr), batch_size=cfg.batch_size, shuffle=cfg.shuffle_batches)
-    opt = optim.AdamW(model.parameters(), lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
+    opt = _metro_optimizer(model, cfg)
     mse = nn.MSELoss(); best, best_state, best_ep, bad = np.inf, None, None, 0
     for ep in range(1, _epochs(cfg.epochs) + 1):
         model.train()

@@ -1,95 +1,174 @@
-# Reproducibility audit of the HAE paper (draft `main_HM.tex`, Dropbox version of 2026-10-14)
+# Reproducibility audit of the HAE paper
 
-Audit date: 2026-10-17. Code audited: the notebooks in `HAE/notebooks/` (copied from
-`mobinapourmoshir/Functional-Autoencoder`, commit `08061a8`; the private `mmadoliat/DHAE`
-repository was not accessible and is assumed to hold the same files — **please confirm**).
-Reruns: Linux, Python 3.12, torch 2.3.1 (CPU), statsmodels 0.15, scikit-learn 1.8. Nothing in
-the manuscript was changed. Items are ordered by importance for submission.
+Manuscript audited: `Mobina - FAE/HAE/main_HM.tex` (Dropbox version of 2026-10-27).
+Audit date: 2026-10-28 (supersedes the audit of 2026-10-17, whose open items are carried over).
+Code: this repository, `HAE/` scripts and `src/hybridae/`, with the procedures implemented **as the
+manuscript describes them** (see [`HAE/README.md`](HAE/README.md) for the setting-by-setting mapping
+and the values used where the manuscript is silent). All numbers below were produced by the
+committed scripts; result files are under `HAE/results/`.
 
-## 1. Simulation study (Tables 2–3, Fig. `combined_boxplots`) — not reproducible from the repository
+Runs: Linux server (Python 3.9.21, torch 2.8.0+cpu, numpy 2.0.2, statsmodels 0.14.6, scikit-learn
+1.6.1), single-threaded processes; data figures on macOS (Python 3.12). The manuscript text and
+numbers were **not** changed (authors' decision); `main_PHM.tex` only adds the nonfunctional
+diagnostics of §3.4 below.
 
-1. **Provenance of the reported numbers.** Every cell of Tables 2–3 equals the mean (SD) of
-   the corresponding file `Simulation/simulated_excels/run8-<scenario>-b<B><B>-d<K>.xlsx`
-   (100 rows each). No notebook in the repository writes files with this schema; the
-   repository's runners write `sim_results_*.xlsx` with different columns.
-2. **Inconsistent metadata in those files.** Their configuration columns read, e.g.,
-   `T = 100`, `meas_noise_sd = 0.1`, `horizon = B`, `fae_n_rep = 100`,
-   `fae_n_basis = K + 2`, none of which matches the design described in the paper
-   (T = 495 + 5, noise 0.001, horizon 5, K latent, B basis functions).
-3. **Implausible dependence structure.** Within a file, FPCA and FAE are supposedly fitted
-   to the same simulated data set in each replicate, so their errors should be strongly
-   positively correlated, and reconstruction and forecast errors should be correlated too.
-   Observed correlations (nonlinear, K = 5, B = 30): FPCA vs FAE reconstruction r = 0.06;
-   reconstruction vs forecast r ≈ 0.00; the same metric across the K = 3 and K = 5 files
-   r ≈ 0.01–0.08 with different `data_seed` columns.
-4. **The repository's own simulation code gives very different values.** With the
-   amplitude–phase notebook code executed verbatim (data seed 30001), FPCA with K = 3 has
-   reconstruction relMSE 0.0021 and forecast relMSE 0.0095 (paper: ≈ 0.12–0.13 and ≈ 0.34).
-   Our port reproduces that notebook to machine precision. The notebook's own saved output
-   for the same seed (`sim_results_nonlinear.xlsx`, row 1) shows 0.117 / 0.312, so the
-   committed generator also differs from the one that produced its saved output. For the
-   linear benchmark the committed runner's saved output has forecast relMSE ≈ 1–2
-   (`sim_results_10runs_linear.xlsx`) versus 0.12–0.24 in Table 3.
-5. **The FAE used in the amplitude–phase notebook differs from the paper's method.**
-   (a) it is trained to reconstruct the *clean* curves from the noisy ones (an oracle not
-   available to FPCA, which is fitted to the noisy curves); (b) every epoch includes a
-   full-batch step on a latent VAR(1) residual penalty with weight `dyn_lambda = 8`, i.e. the
-   latent dynamics are learned jointly with the autoencoder, whereas the paper states that
-   the two stages are estimated separately; (c) architecture tanh, 128 hidden units, biases,
-   K = 3, 45 basis functions; (d) the data-generating basis has 12 B-splines (paper: 30).
-   `HAE/run_simulation.py --fae-mode twostage` runs the procedure as described in the paper.
+## Summary
 
-**Recommendation:** confirm with Mobina how the `run8` files were produced; regenerate
-Tables 2–3 with committed code (e.g. `python HAE/run_simulation.py --grid --reps 100
---fae-mode twostage`, ≈ 1–2 CPU-days) and update the simulation description accordingly.
-A reduced check (3 replicates, K = 5, B = 30) is in `HAE/results/simulation/`.
+| Paper item | Reproduced? | Main reason |
+|---|---|---|
+| Sec. 3, Tables 2–3, Fig. 3 (simulation) | **No — conclusion reversed** | with the committed generator and the stated settings FPCA beats FAE on the nonlinear benchmark by 1–2 orders of magnitude (§1) |
+| Sec. 4.1, relMSE 0.33 (FPCA) vs 0.13 (FAE), Fig. 5 | **No** | no pre-processing variant gives these values; with the stated settings FAE ≈ FPCA (K = 3) and FAE < FPCA (K = 5) (§2) |
+| Sec. 4.1, "AIC yielded q = 1", "basis selected by GCV" (25) | **No** | AIC selects 8 (BIC 2–3); GCV selects 16 (§2) |
+| Table 5, HPCA columns; weather-only HPCA contributions 0.2738 / 0.2784 | **Yes, exactly** | deterministic |
+| Table 5, HAE columns | approximately | seed/platform dependent; 10-seed means in §3.2 |
+| Sec. 4.2, nonfunctional forecast reduction 16.26 % | **not robust** | 10-seed mean 0.6 % (range −21.0 % to +10.5 %) (§3.2) |
+| Sec. 4.2, VAR(7) selected by AIC for HAE | partly | AIC selects 7 for 4 of 10 seeds, 13–14 for the others |
+| Fig. 7 (`hae_vs_hpca`) | **inconsistent with Table 5** | its curves correspond to an earlier run (functional MSE HPCA 0.250, HAE 0.221) (§3.3) |
+| Figs. 4 and 6 (data) | yes | Fig. 4's axis label says "per 1,000 women"; the rates are per woman |
+
+## 1. Simulation study (Section 3)
+
+`python HAE/run_simulation.py --reps 100 --workers 56` then `python HAE/summarize_simulation.py`
+(results: `HAE/results/simulation/`, 2 × 100 data sets × 15 (K, B) cells, FPCA and FAE fitted to the
+same data set in every cell).
+
+Mean relMSE (vs. the noise-free curves), K = 5:
+
+| | B | FPCA recon | FAE recon | FPCA fore | FAE fore | paper FPCA / FAE recon | paper FPCA / FAE fore |
+|---|---|---|---|---|---|---|---|
+| Linear | 10 | 0.601 | 0.608 | 1.030 | 1.038 | 0.061 / 0.070 | 0.148 / 0.171 |
+| Linear | 30 | 0.149 | 0.163 | 1.029 | 1.034 | 0.045 / 0.051 | 0.119 / 0.132 |
+| Nonlinear | 10 | 0.021 | 0.039 | 0.019 | 0.027 | 0.126 / 0.074 | 0.338 / 0.148 |
+| Nonlinear | 30 | 1.2e-4 | 0.014 | 0.0030 | 0.030 | 0.118 / 0.049 | 0.323 / 0.086 |
+| Nonlinear | 50 | 1.2e-4 | 0.012 | 0.0030 | 0.034 | 0.120 / 0.054 | 0.327 / 0.094 |
+
+Full tables in `table_recon.tex` / `table_forecast.tex` (paper layout), all cells in `summary.csv`,
+boxplots in `combined_boxplots.pdf` (log axis for the nonlinear panels).
+
+1. **Nonlinear benchmark.** With σ_η = 0.001 the amplitude–phase curves are almost exactly
+   represented by 5 principal components of a B ≥ 20 spline representation (reconstruction relMSE
+   1.2e-4, K = 3: 2.1e-3). The FAE (B–128–K, tanh, 1400 epochs, as stated) reaches 0.007–0.026 for B ≥ 20. The
+   conclusion "FAE outperforms FPCA across all choices of K and B, often by a substantial margin"
+   is the opposite of what the committed design produces.
+2. **Linear benchmark.** FPCA and FAE are close: FPCA is better for K = 3 and for B ≤ 30 at K = 5;
+   FAE is slightly better for B ≥ 40 at K = 5 and for most B at K = 7 (largest gap K = 7, B = 50:
+   0.217 vs 0.245). Forecast relMSE ≈ 1.03 for both: five-step VAR(1) forecasts are no better than
+   the mean of the held-out curves, partly because the relMSE denominator is the variance of only
+   five reference curves. σ_h and σ_η of the linear benchmark are not stated in the paper (the
+   linear notebook's 0.08 and 0.5 are used; noise is then ≈ 73 % of the variance of the observed curves).
+3. **Provenance of Tables 2–3** (unchanged from the 2026-10-17 audit): every cell equals the mean
+   (SD) of `HAE/notebooks/saved_results/simulated_excels/run8-*.xlsx`; no committed code writes
+   files with that schema, their metadata columns contradict the stated design (T = 100, noise
+   0.1, …), and paired FPCA/FAE errors in the same replicate are essentially uncorrelated
+   (r ≈ 0.06), which is implausible for methods fitted to the same data.
+4. Unstated FAE details needed to train at all: the curves must be centred and scaled (on the raw
+   scale the tanh FAE does not train, reconstruction relMSE > 1); validation split / checkpoint,
+   weight decay and initialization are the notebook's (README).
+
+**Recommendation.** Either describe and commit the generator and settings that produced the
+`run8` files, or replace Tables 2–3 / Fig. 3 by the regenerated results and revise the
+simulation conclusions; a nonlinear benchmark in which a linear subspace is genuinely
+inefficient (larger phase variation, higher noise) would be needed to support the current claim.
 
 ## 2. U.S. fertility (Section 4.1)
 
-* The notebook output is reproduced exactly: FPCA (K = 5) + VAR(1) forecast
-  relRMSE 0.1949 (relMSE 0.0380); FAE (K = 3) + VAR(1) relRMSE 0.0761 (relMSE 0.0058),
-  seed 743. Over seeds 743–747 FAE relMSE = 0.0072 (SD 0.0021).
-* The paper reports relMSE 0.33 (FPCA) vs 0.13 (FAE). These values are not produced by
-  the notebook on any scale we tried (relMSE, relRMSE, centered or original scale).
-* FPCA uses K = 5 while FAE uses K = 3; with K = 3 FPCA gives relMSE 0.0416.
-* Curves are centred with the mean over **all** years including 2019–2023 (look-ahead).
-  `--center train` removes it.
-* The paper says the VAR order was selected by AIC and equals 1; the code fixes VAR(1).
-  AIC (statsmodels, maxlags 8) selects lag 6–8 for the FAE latents and 8 for FPCA scores.
+`python HAE/run_fertility.py --seeds 743 744 745 746 747` (stated settings: raw rates, 25
+B-splines, biases, VAR(1); centring by the training-year mean) and
+`python HAE/run_fertility.py --legacy-notebook` (s = 50 pre-smoothing, all-year centring, no biases).
 
-## 3. Metro traffic (Table `traffic_hybrid`, Sec. 4.2)
+| Forecast relMSE 2019–2023 (centred curves) | stated settings | notebook | paper |
+|---|---|---|---|
+| FPCA K = 3 | 0.072 | 0.042 | — |
+| FPCA K = 5 | 0.025 | 0.038 | 0.33 |
+| FAE K = 3 | 0.063 (SD 0.004, seeds 743–747; range 0.058–0.069) | 0.0058 | 0.13 |
 
-* **Exact:** HPCA and FPCA (all reconstruction/forecast MSEs, VAR(12) for HPCA, weather-only
-  HPCA numbers 0.4625 / 0.4704).
-* **Close, not bit-identical** (float drift across torch builds; notebook epoch-1 losses match
-  to all printed digits): HAE reconstruction 0.0650 / 0.0733 (paper 0.0664 / 0.0735),
-  forecast 0.2948 / 0.3392 (paper 0.2831 / 0.3422); reductions vs HPCA 34.2 % / 17.0 % /
-  26.0 % (paper 36.8 % / 16.3 % / 27.0 %). AIC chose VAR(14) instead of VAR(7).
-* **Fragile claim:** functional-only FAE vs FPCA forecast on the standardized log scale:
-  paper 0.1726 vs 0.2141 (−19.4 %); rerun 0.2360 vs 0.2141 (FAE worse by 10 %); on the
-  count scale FAE is still better (−13.6 %). Multiple seeds are advisable before stating
-  this comparison.
-* **Undocumented details** that a reader cannot infer from the paper: AdamW (paper: Adam);
-  nonfunctional loss weight 0.7; a latent second-difference penalty across consecutive
-  (unshuffled) days, weight 1.5e-3, which is a temporal regulariser inside the first stage;
-  LayerNorm on the B-spline features and on the concatenated input; VAR on standardized
-  latent scores; HPCA uses VAR(12) while HAE uses VAR(7); the functional-only Metro "FAE"
-  has a **learned** 24→16 feature layer, not the fixed basis layer of Section 2.1.
+* None of the variants gives 0.33 / 0.13 (also not on the original scale: FPCA 0.016–0.049,
+  FAE 0.039–0.047 with the stated settings and 0.0025 with the notebook pipeline).
+* The large FAE advantage exists only with the s = 50 pre-smoothing, which turns every year into
+  its cubic least-squares polynomial (2026-10-17 audit §5); the paper no longer describes any
+  pre-processing (the smoothing/centring paragraph is commented out).
+* VAR order: AIC (statsmodels, maxlags 8) selects 8 for the FAE latents and the FPCA scores
+  (BIC 2–3), not 1. GCV for the number of cubic B-splines (pooled over training years) selects 16;
+  GCV(25)/GCV(16) = 1.32.
+* FPCA dimension in Sec. 4.1 is not stated (notebook K = 5; matched K = 3 also reported).
+* Fig. 4: the y-axis label "per 1,000 women" is wrong — `USAfertility.csv` contains births per
+  woman (maximum 0.27). `HAE/make_data_figures.py` labels it accordingly.
 
-## 4. Smaller items
-* Notation: encoder/decoder parameters are φ/ψ in Sec. 2.1 but φ/ϕ in Sec. 2.4; the
-  appendix dynamics use z_{t-1}; σ_z vs σ_h; "Table 1" defines L as horizon while the
-  appendix also uses it — fine, but q vs p for VAR order varies in comments.
-* `\graphicspath{ {./HAE/Plots/} {.} }` plus explicit `HAE/Plots/...` paths — works on
-  Overleaf only from the project root.
+## 3. Metro traffic (Section 4.2)
 
-## 5. U.S. fertility smoothing (affects Section 4.1 and Fig. `fertility_forecasts`) — added 2026-10-17
-`UnivariateSpline(ages, rates, s=50)` is applied to `USAfertility.csv`, whose rates are **per woman**
-(max total sum of squares per year 0.69). With s = 50 ≥ the total sum of squares, every "smoothed"
-curve is exactly the cubic least-squares polynomial in age (max difference 3e-15; the smoothed
-91 × 42 matrix has rank 4; minimum value −0.037 at age 13). All fertility results (FPCA, FAE, and the
-draft VHAE fertility section) are therefore computed on cubic polynomials, not on smoothed
-fertility curves; this also explains why FPCA with K = 5 reconstructs the training curves exactly.
-The value s = 50 presumably came from the Australian notebook (rates per 1,000); the per-woman
-equivalent is s ≈ 5e-5. **Recommendation:** rerun the fertility application with a smoothing factor
-appropriate to the data scale (e.g. GCV-chosen) before submission.
+### 3.1 Data and HPCA — exact
+1,214 complete days, 1,207 pre-forecast, p = 49. HPCA reconstruction/forecast MSEs of Table 5 and
+the weather-only *contributions* 0.2738 / 0.2784 (= Σ over the 29 weather variables of MSE_j / 49)
+are reproduced to all printed digits. Six of the 49 variables are constant over the pre-forecast
+days (`snow_1h_{mean,min,max,std}`, `snow_any`, `weather_Thunderstorm`); `rain_1h_min` is non-zero
+on 9 of 1,207 days.
+
+### 3.2 HAE — seed and platform dependence
+`HAE/run_metro.py --seed s` for s = 776–785, summarized by `HAE/summarize_metro_seeds.py`
+(`HAE/results/metro_seeds/summary.csv`):
+
+| | paper | seed 776 rerun | mean (SD) over 10 seeds | range | seeds better than HPCA |
+|---|---|---|---|---|---|
+| recon functional | 0.0664 | 0.0890 | 0.0793 (0.0114) | 0.061–0.097 | 10/10 |
+| recon nonfunctional | 0.0735 | 0.1108 | 0.0904 (0.0161) | 0.060–0.111 | 10/10 |
+| fore functional | 0.2831 | 0.2327 | 0.2938 (0.0800) | 0.191–0.419 | 10/10 |
+| fore nonfunctional | 0.3422 | 0.3657 | 0.4062 (0.0412) | 0.366–0.494 | 6/10 |
+| weather contribution, fore | 0.2679 | 0.2793 | 0.3025 (0.0553) | 0.240–0.432 | 2/10 |
+
+* The reconstruction and functional-forecast advantages over HPCA hold for every seed. The
+  nonfunctional forecast reduction (paper 16.26 %) averages 0.6 % (range −21.0 % to +10.5 %);
+  the weather variables are forecast better than by HPCA for 2 of 10 seeds.
+* The same seed gives different results across platforms (seed 776: paper/Windows 0.2831,
+  macOS 0.2963, Linux 0.2327 for the functional forecast MSE).
+* AIC (q ≤ 21) selects VAR(7) for 4 seeds and VAR(13–14) for 6.
+* `--optimizer adam` (the paper says Adam; the notebook used AdamW): seed 776 gives 0.0786 / 0.1008
+  / 0.2978 / 0.3645 (recon F / recon N / fore F / fore N), VAR(7) — of the same order.
+
+### 3.3 Figure 7 does not correspond to Table 5
+The HPCA curves of `Plots/hae_vs_hpca.pdf` differ from the deterministic HPCA forecasts behind
+Table 5 (mean absolute differences 47–561 vehicles/h per day; e.g. Sat Sep 29 at noon: 4,321 in
+the figure vs. 3,478). Decoding the figure's vector paths and mapping them back to the
+standardized log scale gives functional forecast MSEs of **0.2496 (HPCA) and 0.2214 (HAE)** —
+the values of the earlier analysis that is still commented out in the manuscript ("0.250 to
+0.221"), not 0.4479 / 0.2831. `HAE/results/metro/hae_vs_hpca.pdf` is the figure consistent with
+Table 5's HPCA (HAE from the seed-776 rerun).
+
+### 3.4 Nonfunctional diagnostics (new; `main_PHM.tex`, Figs. 8–9 and Table 6)
+`HAE/make_nonfunctional_figures.py --seed-dirs HAE/results/metro_seeds/seed*`:
+per-variable reconstruction R² (median over seeds: weather continuous 0.91 vs HPCA 0.68, weather
+indicators 0.95 vs 0.05, calendar 0.89 vs 0.34, holidays 0.98 vs 0.01); block decomposition of
+the nonfunctional MSE (reconstruction −63 % to −98 % in every block; forecasting −22 % for calendar,
++8–9 % for the weather blocks); categorical recovery (modal weather condition 99.2 % vs 76.3 %,
+majority share 42.1 %; holiday balanced accuracy 99.9 % vs 50.0 %).
+
+### 3.5 Rolling-origin check (not in the paper)
+`HAE/run_metro_rolling.py --seed s` (s = 776–780): HAE and HPCA estimated once on the days before
+2018-06-30, latent VAR re-estimated at 13 weekly origins (the last one is the paper's test week).
+Medians over origins (HAE: range over seeds):
+
+| | HAE | HPCA | seasonal naive | origins with HAE < HPCA |
+|---|---|---|---|---|
+| functional MSE | 0.190–0.305 | 0.200 | 0.194 | 2–5 of 13 |
+| weather contribution | 0.274–0.327 | 0.242 | 0.505 | 1–5 of 13 |
+| calendar + holiday contribution | 0.082–0.110 | 0.102 | 0.028 | 4–8 of 13 |
+
+The forecasting advantage of Table 5 is specific to the single test week; over 13 origins neither
+HAE nor HPCA beats a same-weekday-last-week forecast of the traffic curves.
+Means over origins are dominated by rare variables (`rain_1h_min`, named holidays) whose standardized
+values reach > 100; medians are therefore reported.
+
+### 3.6 Details a reader cannot infer from the paper (unchanged)
+AdamW rather than Adam; γ = 0.7 and λ = 2e-4; an additional penalty 1.5e-3 × squared second
+differences of the latent states of consecutive days (a temporal regularizer inside the first
+stage, not part of eq. (hae_loss)); LayerNorm on the 16 features and on the concatenated input;
+best checkpoint after epoch 50 with patience 180; unshuffled batches; gradient clipping; VAR fitted
+to standardized latent scores; HPCA uses VAR(12).
+
+## 4. Suggested text corrections (not applied)
+1. Sec. 3: state σ_h, σ_η of the linear benchmark; state the curve standardization, validation split
+   and weight decay of the FAE; reconcile Tables 2–3 / Fig. 3 with committed code (§1).
+2. Sec. 4.1: describe the pre-processing actually used; state the FPCA dimension; correct "AIC
+   yielded q = 1" and "selected by GCV" or give the criterion that yields them; fix the Fig. 4 unit.
+3. Sec. 4.2: "Adam" → "AdamW"; give γ, λ and the latent smoothness penalty; replace Fig. 7 by the
+   version consistent with Table 5; qualify the nonfunctional forecasting gain (§3.2, §3.5); note
+   the six constant variables in Table 4.

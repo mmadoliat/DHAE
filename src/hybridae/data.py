@@ -9,8 +9,12 @@ import pandas as pd
 from scipy.interpolate import UnivariateSpline
 
 # ------------------------------------------------------------------ fertility
-def load_usa_fertility(csv_path, smooth_s: float = 50.0):
-    """Returns ages [P], years [N], raw rates [N,P], smoothed rates [N,P] (rows = years)."""
+def load_usa_fertility(csv_path, smooth_s: float | None = 50.0):
+    """Returns ages [P], years [N], raw rates [N,P], smoothed rates [N,P] (rows = years).
+
+    smooth_s : smoothing factor of scipy's UnivariateSpline applied to each year (the
+    notebooks used 50, which on these per-woman rates returns the cubic least-squares
+    polynomial; see REPRODUCIBILITY_AUDIT.md). None = no pre-smoothing (smoothed = raw)."""
     df = pd.read_csv(csv_path)
     ages = df["Age"].to_numpy()
     year_cols = [c for c in df.columns if c != "Age"]
@@ -18,7 +22,7 @@ def load_usa_fertility(csv_path, smooth_s: float = 50.0):
     rates = df[year_cols].to_numpy()                       # [P, N]
     smoothed = np.zeros_like(rates, dtype=float)
     for i in range(rates.shape[1]):
-        smoothed[:, i] = UnivariateSpline(ages, rates[:, i], s=smooth_s)(ages)
+        smoothed[:, i] = rates[:, i] if smooth_s is None else UnivariateSpline(ages, rates[:, i], s=smooth_s)(ages)
     order = np.argsort(years)
     return ages, years[order], rates.T[order].astype(float), smoothed.T[order].astype(float)
 
@@ -76,11 +80,11 @@ def build_metro_daily(df_raw: pd.DataFrame):
     g = df_hour[df_hour["date"].isin(dates)].copy().groupby("date")
     cal = pd.DataFrame(index=dates)
     cal["is_holiday"] = (g["holiday"].agg(_mode).reindex(dates).fillna("None").astype(str) != "None").astype(float)
-    cal["is_weekend"] = (dates.dayofweek >= 5).astype(float)
+    cal["is_weekend"] = (dates.day_of_week >= 5).astype(float)
     cal["year_index"] = (dates.year - dates.year.min()).astype(float)
     cal["month_sin"] = np.sin(2 * np.pi * dates.month / 12.0); cal["month_cos"] = np.cos(2 * np.pi * dates.month / 12.0)
-    cal["weekday_sin"] = np.sin(2 * np.pi * dates.dayofweek / 7.0); cal["weekday_cos"] = np.cos(2 * np.pi * dates.dayofweek / 7.0)
-    cal["doy_sin"] = np.sin(2 * np.pi * dates.dayofyear / 365.25); cal["doy_cos"] = np.cos(2 * np.pi * dates.dayofyear / 365.25)
+    cal["weekday_sin"] = np.sin(2 * np.pi * dates.day_of_week / 7.0); cal["weekday_cos"] = np.cos(2 * np.pi * dates.day_of_week / 7.0)
+    cal["doy_sin"] = np.sin(2 * np.pi * dates.day_of_year / 365.25); cal["doy_cos"] = np.cos(2 * np.pi * dates.day_of_year / 365.25)
     cont = pd.DataFrame(index=dates)
     for col in ["temp", "rain_1h", "snow_1h", "clouds_all"]:
         cont[f"{col}_mean"] = g[col].mean().reindex(dates); cont[f"{col}_min"] = g[col].min().reindex(dates)

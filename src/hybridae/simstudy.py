@@ -97,3 +97,132 @@ def run_replicate(scenario, rep, K, B, methods=("fpca", "fae"), fae_mode="notebo
         if var:
             out[f"{name}_mean_post_sd"] = float(np.exp(0.5 * lv_).mean()); out[f"{name}_H_sd"] = float(H.std(0).mean())
     return out, fixed
+
+
+# =====================================================================
+# Design exactly as described in Section 3 of the HAE paper
+# (used by HAE/run_simulation.py; the functions above are kept for VHAE/
+#  and for the legacy notebook procedure)
+# =====================================================================
+from dataclasses import dataclass, asdict
+from .simulate import _latent_var1_matrix
+from .utils import set_seed
+
+PAPER_KS = (3, 5, 7)
+PAPER_BS = (10, 20, 30, 40, 50)
+
+
+@dataclass
+class PaperSimCfg:
+    # data (paper Sec. 3 and Appendix Table 'nonlinear_sim_notation')
+    N: int = 500                    # T + L curves
+    J: int = 100                    # grid points on [0, 1]
+    d: int = 5                      # dimension of the data-generating latent state
+    L: int = 5                      # held-out curves (forecast horizon)
+    gen_n_basis: int = 30           # B-splines of the linear generating map
+    sigma_h_nonlinear: float = 0.028
+    sigma_eta_nonlinear: float = 0.001
+    sigma_h_linear: float = 0.08    # NOT stated in the paper (value of the linear notebook)
+    sigma_eta_linear: float = 0.5   # NOT stated in the paper (value of the linear notebook)
+    seed_base: int = 30000          # data seed of replicate r = seed_base + r
+    # FAE (paper: B-128-K / K-128-B, tanh, Adam lr 7e-4, batch 16, 1400 epochs, lambda 2e-4)
+    hidden: int = 128
+    activation: str = "tanh"
+    lr: float = 7e-4
+    batch_size: int = 16
+    epochs: int = 1400
+    smooth_lambda: float = 2e-4
+    # FAE details NOT stated in the paper (values of the amplitude--phase notebook)
+    weight_decay: float = 1e-5
+    split_rate: float = 0.85        # chronological 85/15 split, best-validation checkpoint
+    init_sd: float = 0.06
+    fae_seed: int = 743
+    standardize: bool = True        # centre + scale curves before the FAE (training fails on the raw scale)
+    var_ridge: float = 1e-6         # VAR(1) by (essentially) least squares
+
+
+def simulate_linear_paper(c: PaperSimCfg, data_seed: int):
+    """Linear benchmark: stable VAR(1) latent state -> fixed linear map (d -> 20 -> gen_n_basis)
+    -> B-spline coefficients -> curve on [0, 1]; Gaussian noise. The map and A are fixed across
+    replicates (seed 123); innovations and noise depend on data_seed only."""
+    cfg = SimCfg(scenario="linear", T=c.N, P=c.J, d=c.d, Sigma_scale=c.sigma_h_linear,
+                 meas_noise_sd=c.sigma_eta_linear, gen_n_basis=c.gen_n_basis)
+    fixed = build_linear_decoder(cfg)
+    rng = np.random.default_rng(data_seed)
+    Z = np.zeros((c.N, c.d)); S = fixed["Sigma"]
+    Z[0] = rng.multivariate_normal(np.zeros(c.d), S)
+    for t in range(1, c.N):
+        Z[t] = fixed["A"] @ Z[t - 1] + rng.multivariate_normal(np.zeros(c.d), S)
+    with torch.no_grad():
+        Xc = fixed["mapper"](torch.tensor(Z, dtype=torch.float32)) @ fixed["Bgen"].T
+        g = torch.Generator().manual_seed(data_seed + 999)
+        Xn = Xc + c.sigma_eta_linear * torch.randn(Xc.shape, generator=g)
+    return Xc, Xn
+
+
+def make_data_paper(scenario: str, rep: int, c: PaperSimCfg):
+    if scenario == "linear":
+        Xc, Xn = simulate_linear_paper(c, c.seed_base + rep)
+    else:
+        cfg = SimCfg(scenario="nonlinear", T=c.N, P=c.J, d=c.d, Sigma_scale=c.sigma_h_nonlinear,
+                     meas_noise_sd=c.sigma_eta_nonlinear)
+        Xc, Xn, _, _ = simulate_nonlinear(cfg, c.seed_base + rep)
+    return Xc.float(), Xn.float(), np.linspace(0.0, 1.0, c.J)
+
+
+def fpca_on_basis(X_tr: torch.Tensor, u: np.ndarray, B: int, K: int):
+    """FPCA of the B-dimensional cubic B-spline representation of the training curves
+    (least-squares coefficients), centred, L2 inner product by trapezoid weights."""
+    Bm = make_basis(torch.tensor(u, dtype=torch.float32), B).double()          # [J, B]
+    coef = torch.linalg.lstsq(Bm, X_tr.double().T).solution                     # [B, T]
+    Xs = (Bm @ coef).T.float()
+    mu, phi, sc, _ = weighted_fpca_fit(Xs, trapezoid_weights(u), K)
+    return mu, phi, sc
+
+
+def run_replicate_paper(scenario: str, rep: int, Ks=PAPER_KS, Bs=PAPER_BS, c: PaperSimCfg | None = None):
+    """One simulated data set, all (K, B) cells: FPCA+VAR(1) and FAE+VAR(1).
+    relMSE (eq. relmse) against the noise-free curves; reconstruction on the T training
+    curves, forecasting on the L held-out curves."""
+    import time
+    c = c or PaperSimCfg()
+    Xc, Xn, u = make_data_paper(scenario, rep, c)
+    Lh = c.L
+    Xc_tr, Xc_te, Xn_tr, Xn_te = Xc[:-Lh], Xc[-Lh:], Xn[:-Lh], Xn[-Lh:]
+    tpts = torch.tensor(u, dtype=torch.float32)
+    if c.standardize:
+        m0 = Xn_tr.mean(0, keepdim=True); s0 = float((Xn_tr - m0).std())
+    else:
+        m0 = torch.zeros(1, Xn_tr.shape[1]); s0 = 1.0
+    Z = (Xn_tr - m0) / s0
+    rows = []
+    for K in Ks:
+        for B in Bs:
+            t0 = time.time()
+            row = dict(scenario=scenario, rep=rep, data_seed=c.seed_base + rep, K=K, B=B)
+            # ---- FPCA + VAR(1)
+            mu, phi, sc = fpca_on_basis(Xn_tr, u, B, K)
+            H = sc.numpy().astype(np.float64); b, A, _ = fit_var1(H, c.var_ridge)
+            Hf = forecast_var1(H[-1], b, A, Lh)
+            xr = mu[None] + sc @ phi; xf = mu[None] + torch.tensor(Hf, dtype=torch.float32) @ phi
+            row |= dict(fpca_recon=rel_mse(xr, Xc_tr), fpca_fore=rel_mse(xf, Xc_te),
+                        fpca_recon_noisy=rel_mse(xr, Xn_tr), fpca_fore_noisy=rel_mse(xf, Xn_te))
+            # ---- FAE + VAR(1) (two-stage: AE first, then VAR on the fitted latents)
+            Bp, Br = make_basis(tpts, B), make_basis(tpts, B)
+            fac = partial(FAEVanilla, B, K, B, hidden=c.hidden, activation=c.activation, bias=True,
+                          init_weight_sd=c.init_sd)
+            tc = PhaseFAECfg(seed=c.fae_seed, epochs=c.epochs, batch_size=c.batch_size, lr=c.lr,
+                             weight_decay=c.weight_decay, split_rate=c.split_rate,
+                             smooth_lambda=c.smooth_lambda, dyn_lambda=0.0, clean_target=False)
+            model = train_fae_phase(fac, Z, Z, tpts, Bp, Br, tc)
+            with torch.no_grad():
+                zr, Ht, _, _ = model(Z, tpts, Bp, Br)
+                H = Ht.numpy().astype(np.float64); b, A, _ = fit_var1(H, c.var_ridge)
+                Hf = forecast_var1(H[-1], b, A, Lh)
+                zf, _ = model.decode_from_rep(torch.tensor(Hf, dtype=torch.float32), Br)
+            xr, xf = zr * s0 + m0, zf * s0 + m0
+            row |= dict(fae_recon=rel_mse(xr, Xc_tr), fae_fore=rel_mse(xf, Xc_te),
+                        fae_recon_noisy=rel_mse(xr, Xn_tr), fae_fore_noisy=rel_mse(xf, Xn_te),
+                        sec=time.time() - t0)
+            rows.append(row)
+    return rows

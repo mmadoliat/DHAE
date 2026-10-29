@@ -1,0 +1,69 @@
+{
+  "HAE": {
+    "recon_func": 0.07469984143972397,
+    "recon_nonfunc": 0.0786304622888565,
+    "recon_hybrid": 0.15333030372858047,
+    "fore_func": 0.19312021136283875,
+    "fore_nonfunc": 0.39896324276924133,
+    "fore_hybrid": 0.5920834541320801,
+    "fore_func_counts": 200521.047989838,
+    "recon_weather": 0.08506454527378082,
+    "fore_weather": 0.49859917163848877,
+    "contrib_weather_recon": 0.05034431774558642,
+    "contrib_weather_fore": 0.2950893066256399,
+    "contrib_weather_continuous_recon": 0.03758650550428842,
+    "contrib_weather_continuous_fore": 0.14709927063251024,
+    "contrib_weather_indicator_recon": 0.012757812241298,
+    "contrib_weather_indicator_fore": 0.14799003599312965,
+    "contrib_calendar_recon": 0.02394368881977735,
+    "contrib_calendar_fore": 0.09809493263284164,
+    "contrib_holiday_recon": 0.00434244967145701,
+    "contrib_holiday_fore": 0.005779021252598645,
+    "var": {
+      "model": "VAR",
+      "lag": 14,
+      "aic": -2.189958975298007
+    },
+    "best_epoch": 411
+  },
+  "HPCA": {
+    "recon_func": 0.1919575035572052,
+    "recon_nonfunc": 0.6084830164909363,
+    "recon_hybrid": 0.8004405200481415,
+    "fore_func": 0.4478705624515365,
+    "fore_nonfunc": 0.40861965663843225,
+    "fore_hybrid": 0.8564902190899688,
+    "fore_func_counts": 558122.5515859845,
+    "recon_weather": 0.4625483751296997,
+    "fore_weather": 0.4704465776650364,
+    "contrib_weather_recon": 0.2737531127858075,
+    "contrib_weather_fore": 0.2784275663731848,
+    "contrib_weather_continuous_recon": 0.11469056146341257,
+    "contrib_weather_continuous_fore": 0.11407908308404309,
+    "contrib_weather_indicator_recon": 0.1590625513223949,
+    "contrib_weather_indicator_fore": 0.16434848328914167,
+    "contrib_calendar_recon": 0.1131014836402055,
+    "contrib_calendar_fore": 0.12814270059014404,
+    "contrib_holiday_recon": 0.22162844810285662,
+    "contrib_holiday_fore": 0.002049389675103391,
+    "var": {
+      "model": "VAR",
+      "lag": 12,
+      "aic": -4.108490468630147
+    },
+    "explained_var": 0.4862291216850281
+  },
+  "seed": 780,
+  "optimizer": "adamw",
+  "runtime_sec": 414.7195360660553,
+  "env": {
+    "python": "3.9.21",
+    "platform": "Linux-5.14.0-687.59.1.el9_8.x86_64-x86_64-with-glibc2.34",
+    "torch": "2.8.0+cpu",
+    "numpy": "2.0.2",
+    "scipy": "1.13.1",
+    "sklearn": "1.6.1",
+    "statsmodels": "0.14.6",
+    "pandas": "2.3.3"
+  }
+}

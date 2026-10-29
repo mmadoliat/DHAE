@@ -47,22 +47,29 @@ The scripts also run without installation (they add `src/` to the path).
 ## Quick start
 
 ```bash
-python HAE/run_fertility.py                 # ~2 min CPU
-python HAE/run_metro.py                     # ~7 min CPU
-python HAE/run_simulation.py --scenario nonlinear --K 5 --B 30 --reps 5
+python HAE/run_fertility.py                              # Sec. 4.1, ~2 min CPU
+python HAE/run_metro.py                                  # Sec. 4.2, Table 5 / Fig. 7, 1-5 min CPU
+python HAE/make_nonfunctional_figures.py                 # nonfunctional diagnostics (main_PHM.tex)
+python HAE/make_data_figures.py                          # Figs. 4 and 6
+python HAE/run_simulation.py --reps 100 --workers 56     # Sec. 3 (15-25 CPU-hours in total)
+python HAE/summarize_simulation.py                       # Tables 2-3, Fig. 3
 python VHAE/run_metro.py --seeds 776 777 778
 python VHAE/run_fertility.py
 ```
 
 Set `HYBRIDAE_MAX_EPOCHS=3` for a quick smoke test of any script. Every script writes its
 numbers to `*/results/...` (JSON/CSV) together with the software versions used.
+[`HAE/README.md`](HAE/README.md) maps every script to the paper item it produces and lists the
+settings stated in the manuscript next to those used where the manuscript is silent.
 
 ## Reproducibility notes
 
-Training is deterministic for a given seed, PyTorch build and platform, but not bit-identical
-across them: on Linux/torch 2.3.1 the Metro HAE run matches the original notebook log at epoch 1
-and then drifts slightly. Linear baselines (FPCA, HPCA) reproduce exactly. Please read
-[`REPRODUCIBILITY_AUDIT.md`](REPRODUCIBILITY_AUDIT.md) before citing simulation numbers.
+The HAE scripts implement the procedures as the manuscript (`main_HM.tex`, 2026-10-27) describes
+them. Linear baselines (FPCA, HPCA) reproduce exactly; autoencoder results depend on the seed and
+on the platform (torch build), so Metro results are also reported over ten training seeds.
+Several numbers in the manuscript are **not** reproduced by the committed code (simulation
+Tables 2-3, fertility relMSEs, Fig. 7) — please read
+[`REPRODUCIBILITY_AUDIT.md`](REPRODUCIBILITY_AUDIT.md) before citing them.
 
 ## License
 

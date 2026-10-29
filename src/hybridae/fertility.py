@@ -12,10 +12,12 @@ from .forecast import fit_var1, forecast_var1
 from .baselines import weighted_fpca_fit
 
 
-def prepare_fertility(csv, train_end=2018, test_years=(2019, 2020, 2021, 2022, 2023), center="all", standardize=False):
+def prepare_fertility(csv, train_end=2018, test_years=(2019, 2020, 2021, 2022, 2023), center="all", standardize=False,
+                      smooth_s=50.0):
     """center='all' reproduces the notebook (mean over ALL years, incl. test years);
-    center='train' uses the training-year mean only (no look-ahead)."""
-    ages, years, raw, sm = load_usa_fertility(csv)
+    center='train' uses the training-year mean only (no look-ahead).
+    smooth_s: per-year UnivariateSpline smoothing factor (notebook 50); None = raw rates."""
+    ages, years, raw, sm = load_usa_fertility(csv, smooth_s=smooth_s)
     tr, te = years <= train_end, np.isin(years, test_years)
     mu = sm.mean(0) if center == "all" else sm[tr].mean(0)
     x = sm - mu
@@ -26,12 +28,13 @@ def prepare_fertility(csv, train_end=2018, test_years=(2019, 2020, 2021, 2022, 2
                 years_tr=years[tr], years_te=years[te], scale=scale, tpts=torch.tensor(t, dtype=torch.float32))
 
 
-def fit_fae_fertility(D, K=3, B=25, variational=False, cfg: FAETrainCfg | None = None, hidden=100, logvar_init=-6.0):
+def fit_fae_fertility(D, K=3, B=25, variational=False, cfg: FAETrainCfg | None = None, hidden=100, logvar_init=-6.0,
+                      bias=False):
     cfg = cfg or FAETrainCfg()
     Bp = make_basis(D["tpts"], B); Br = make_basis(D["tpts"], B)
     cls = VFAEVanilla if variational else FAEVanilla
     kw = dict(logvar_init=logvar_init) if variational else {}
-    factory = partial(cls, B, K, B, hidden=hidden, activation="relu", bias=False, init_weight_sd=0.5, **kw)
+    factory = partial(cls, B, K, B, hidden=hidden, activation="relu", bias=bias, init_weight_sd=0.5, **kw)
     model, _ = train_fae_random_split(factory, D["x_tr"], D["tpts"], Bp, Br, cfg)
     return model, Bp, Br
 
@@ -63,3 +66,23 @@ def aic_lag(H, maxlags=8):
         return int(VAR(H).select_order(maxlags=maxlags).aic)
     except Exception:
         return None
+
+
+def var_order_table(H, maxlags=8):
+    """AIC/BIC/HQIC-selected VAR orders (statsmodels select_order, common estimation sample)."""
+    try:
+        sel = VAR(np.asarray(H, dtype=np.float64)).select_order(maxlags=maxlags)
+        return {k: int(v) for k, v in sel.selected_orders.items()}
+    except Exception:
+        return None
+
+
+def gcv_basis_dimension(X, tpts, M_range=range(6, 41)):
+    """GCV for the number M of cubic B-splines of a least-squares regression spline, pooled
+    over the curves (rows of X): GCV(M) = mean squared residual / (1 - M/J)^2."""
+    X = np.asarray(X, dtype=np.float64); J = X.shape[1]; out = {}
+    for M in M_range:
+        Bm = make_basis(tpts, M).numpy().astype(np.float64)
+        Hm = Bm @ np.linalg.pinv(Bm)
+        out[int(M)] = float(np.mean((X - X @ Hm.T) ** 2) / (1 - np.trace(Hm) / J) ** 2)
+    return min(out, key=out.get), out

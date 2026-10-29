@@ -37,9 +37,32 @@ def hae_recon_and_forecast(model, D, cfg):
                 x_fore=xf.numpy(), y_fore=yf.numpy(), scaler=scaler, var_result=res)
 
 
+def nonfunctional_blocks(names):
+    """Variable blocks of Table 'metro_variables' (paper): weather (29), calendar (9), holiday (11).
+    Weather is split further into continuous summaries (18) and indicators (11)."""
+    w = weather_target_columns(names)
+    cont = [i for i in w if not (names[i].startswith("weather_") or names[i] in ("rain_any", "snow_any"))]
+    ind = [i for i in w if i not in cont]
+    hol = [i for i, n in enumerate(names) if n.startswith("holiday_")]
+    cal = [i for i in range(len(names)) if i not in w and i not in hol]
+    return {"weather": w, "weather_continuous": cont, "weather_indicator": ind,
+            "calendar": cal, "holiday": hol}
+
+
+def per_variable_mse(pred, truth):
+    return np.mean((np.asarray(pred, dtype=np.float64) - np.asarray(truth, dtype=np.float64)) ** 2, axis=0)
+
+
 def point_table(D, x_recon, y_recon, x_fore, y_fore):
+    """MSEs on the standardized scale (Table 'traffic_hybrid').
+
+    recon_weather / fore_weather : mean over the 29 weather variables only.
+    contrib_<block>_{recon,fore}  : contribution of a block to the nonfunctional MSE,
+        i.e. sum_{j in block} MSE_j / p, as reported in the paper for the weather block
+        (the contributions of the three blocks add up to recon_nonfunc / fore_nonfunc).
+    """
     w = D["weather_idx"]
-    return dict(
+    out = dict(
         recon_func=mse(x_recon, D["x_tr"]), recon_nonfunc=mse(y_recon, D["y_tr"]),
         recon_hybrid=mse(x_recon, D["x_tr"]) + mse(y_recon, D["y_tr"]),
         fore_func=mse(x_fore, D["x_te"]), fore_nonfunc=mse(y_fore, D["y_te"]),
@@ -48,3 +71,9 @@ def point_table(D, x_recon, y_recon, x_fore, y_fore):
         recon_weather=float(np.mean((np.asarray(y_recon)[:, w] - D["y_tr"][:, w]) ** 2)),
         fore_weather=float(np.mean((np.asarray(y_fore)[:, w] - D["y_te"][:, w]) ** 2)),
     )
+    p = D["y_tr"].shape[1]
+    vr, vf = per_variable_mse(y_recon, D["y_tr"]), per_variable_mse(y_fore, D["y_te"])
+    for b, idx in nonfunctional_blocks(D["names"]).items():
+        out[f"contrib_{b}_recon"] = float(vr[idx].sum() / p)
+        out[f"contrib_{b}_fore"] = float(vf[idx].sum() / p)
+    return out
